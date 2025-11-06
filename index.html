@@ -1,1 +1,338 @@
-<html><body><p>Hello World</p></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shutdown Cost vs. ACA Funding</title>
+    <!-- 1. Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Load Icons -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    
+    <style>
+      /* Simple Inter font stack */
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      }
+      /* Kickstarter Green */
+      .bg-kickstarter-green { background-color: #05A363; }
+      .text-kickstarter-green { color: #05A363; }
+      .border-kickstarter-green { border-color: #05A363; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- This is where the application will be rendered -->
+    <div id="root"></div>
+
+    <!-- 3. Vanilla JavaScript application code -->
+    <script>
+        // --- Core Data Constants ---
+        const SHUTDOWN_COST_PER_DAY = 400_000_000; // $400M per day (CBO estimate)
+        // Main Goal: 1-year extension of enhanced ACA premium tax credits
+        const MAIN_GOAL_1_YEAR = 30_000_000_000; // $30 Billion
+
+        // --- Dynamic Date Calculation ---
+        // Start date of the shutdown
+        const SHUTDOWN_START_DATE = new Date('2025-10-01T00:00:00');
+        // Simulated "Now" date (Current environment time is Nov 5, 2025)
+        const NOW = new Date('2025-11-05T21:53:00'); 
+        
+        const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
+        
+        // Calculate the number of full days elapsed + 1 to include the start day
+        const TIME_DIFF_MS = NOW.getTime() - SHUTDOWN_START_DATE.getTime();
+        const FIXED_SHUTDOWN_DAYS = Math.floor(TIME_DIFF_MS / MILLISECONDS_PER_DAY) + 1; 
+
+        // --- Snapshot Calculations based on the calculated days ---
+        const FIXED_TOTAL_COST = FIXED_SHUTDOWN_DAYS * SHUTDOWN_COST_PER_DAY; 
+        const FIXED_PERCENT_FUNDED = (FIXED_TOTAL_COST / MAIN_GOAL_1_YEAR) * 100;
+        
+        const MILESTONES = [
+          {
+            title: "Smaller Alternative",
+            goal: 17_500_000_000,
+            description: "Extends roughly half of the subsidies. (Based on $175B/10yr)"
+          },
+          {
+            title: "Progressive Alternative",
+            goal: 28_000_000_000,
+            description: "Extends subsidies <300% FPL & phases up. (Based on $280B/10yr)"
+          },
+          {
+            title: "Extend <600% FPL",
+            goal: 32_500_000_000,
+            description: "Extends subsidies for those below 600% of poverty. (Based on $325B/10yr)"
+          },
+          {
+            title: "Permanent Extension",
+            goal: 35_000_000_000,
+            description: "Makes all current subsidies permanent. (Based on $350B/10yr)"
+          },
+        ];
+
+        // --- Circular Progress Bar Constants (for SVG) ---
+        const CIRCLE_RADIUS = 40;
+        const CIRCLE_STROKE_WIDTH = 8;
+        // Circumference = 2 * PI * R
+        const CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS;
+
+
+        // --- Helper Functions ---
+
+        /**
+         * Formats a large number into a currency string (e.g., $10.5B or $500M)
+         */
+        const formatCurrencyShort = (value) => {
+          if (value >= 1_000_000_000) {
+            return `$${(value / 1_000_000_000).toFixed(2)}B`;
+          }
+          if (value >= 1_000_000) {
+            return `$${(value / 1_000_000).toFixed(1)}M`;
+          }
+          return `$${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+        };
+        
+        /**
+         * Formats a number into a whole dollar currency string.
+         */
+        const formatWholeDollarCurrency = (value) => {
+          return `$${value.toLocaleString('en-US', { 
+            minimumFractionDigits: 0, 
+            maximumFractionDigits: 0 
+          })}`;
+        };
+
+        /**
+         * Calculates and formats the length of subsidy time funded by the shutdown cost.
+         */
+        const formatTimeFunded = (totalCost, goal) => {
+            const DAYS_IN_YEAR = 365;
+            const MONTHS_IN_YEAR = 12;
+            
+            // 1. Calculate time funded in years (as a decimal)
+            const timeFundedYears = totalCost / goal;
+            
+            // 2. Convert to total days funded
+            const totalDaysFunded = timeFundedYears * DAYS_IN_YEAR;
+            
+            // 3. Calculate months and remaining days (using average month length)
+            const avgDaysPerMonth = DAYS_IN_YEAR / MONTHS_IN_YEAR;
+            
+            const months = Math.floor(totalDaysFunded / avgDaysPerMonth);
+            const daysRemainder = Math.round(totalDaysFunded % avgDaysPerMonth);
+            
+            if (months > 0 && daysRemainder > 0) {
+                return `${months} months and ${daysRemainder} days`;
+            } else if (months > 0) {
+                return `${months} months`;
+            } else if (daysRemainder > 0) {
+                return `${daysRemainder} days`;
+            } else {
+                return "Less than a day";
+            }
+        };
+
+        // --- Component Rendering Functions (Returning HTML strings) ---
+        
+        /**
+         * Renders the main circular progress bar using SVG.
+         */
+        const renderCircularProgressBar = (percentage) => {
+          const displayPercent = Math.min(percentage, 100);
+          
+          // Calculate the stroke-dashoffset to represent the percentage fill
+          const offset = CIRCUMFERENCE - (displayPercent / 100) * CIRCUMFERENCE;
+
+          return `
+            <svg class="transform -rotate-90 w-36 h-36 mx-auto" viewBox="0 0 100 100">
+                <!-- Background circle (gray track) -->
+                <circle
+                    cx="50"
+                    cy="50"
+                    r="${CIRCLE_RADIUS}"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    stroke-width="${CIRCLE_STROKE_WIDTH}"
+                ></circle>
+                <!-- Foreground circle (green progress fill) -->
+                <circle
+                    cx="50"
+                    cy="50"
+                    r="${CIRCLE_RADIUS}"
+                    fill="none"
+                    stroke="#05A363" /* Kickstarter Green */
+                    stroke-width="${CIRCLE_STROKE_WIDTH}"
+                    stroke-linecap="round"
+                    stroke-dasharray="${CIRCUMFERENCE}"
+                    stroke-dashoffset="${offset}"
+                    style="transition: stroke-dashoffset 0.5s ease-out;"
+                ></circle>
+            </svg>
+          `;
+        };
+        
+        /**
+         * Renders the small horizontal progress bar for reward tiers.
+         */
+        const renderMiniProgressBar = (percentage) => {
+          const displayPercent = Math.min(percentage, 100);
+          return `
+            <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+              <div
+                class="bg-kickstarter-green h-1.5 rounded-full"
+                style="width: ${displayPercent.toFixed(0)}%; transition: width 0.5s ease-out;"
+              ></div>
+            </div>
+          `;
+        };
+
+        /**
+         * Renders an alternative funding goal card.
+         */
+        const renderMilestoneRewardCard = (milestone, currentCost) => {
+          const percentage = (currentCost / milestone.goal) * 100;
+          const isFunded = percentage >= 100;
+
+          return `
+            <div class="rounded-lg border ${isFunded ? 'border-kickstarter-green bg-green-50' : 'border-gray-300 bg-white'} p-5 shadow-sm">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-lg font-bold text-kickstarter-green">
+                  Goal: ${formatCurrencyShort(milestone.goal)}
+                </span>
+                ${isFunded ? `
+                  <span class="px-2 py-0.5 rounded-full bg-kickstarter-green text-white text-xs font-bold">
+                    FUNDED
+                  </span>
+                ` : ''}
+              </div>
+              <h3 class="text-md font-semibold text-gray-800">${milestone.title}</h3>
+              <p class="text-sm text-gray-600 mt-1 mb-3">${milestone.description}</p>
+              ${renderMiniProgressBar(percentage)}
+              <div class="text-xs text-gray-500 mt-1">
+                ${percentage.toFixed(0)}% funded by shutdown
+              </div>
+            </div>
+          `;
+        };
+        
+        /**
+         * Main render function that constructs the entire application HTML.
+         */
+        const renderApp = () => {
+            const timeFundedText = formatTimeFunded(FIXED_TOTAL_COST, MAIN_GOAL_1_YEAR);
+            const milestoneCards = MILESTONES.map(m => renderMilestoneRewardCard(m, FIXED_TOTAL_COST)).join('');
+
+            const html = `
+                <div>
+                  <nav class="w-full bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-50">
+                    <div class="flex items-center space-x-4">
+                      <span class="text-kickstarter-green font-bold text-2xl">KICKSTOPPER</span>
+                    </div>
+                  </nav>
+
+                  <!-- Page Title Area -->
+                  <div class="w-full bg-white border-b border-gray-200">
+                    <div class="max-w-6xl mx-auto px-4 py-6">
+                      <h1 class="text-3xl md:text-4xl font-bold text-gray-900">
+                        Fund ACA Subsidies, Not a Shutdown
+                      </h1>
+                      <p class="text-lg text-gray-600 mt-2">
+                        A snapshot comparison of the 2025 government shutdown cost vs. the cost to
+                        extend enhanced ACA premium tax credits for one year.
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Main Content Area (2-column) -->
+                  <div class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <!-- Left Column (Content & Story) -->
+                    <div class="lg:col-span-2">
+                      
+                      <!-- Main Pledge Box (Snapshot of Funding) -->
+                      <div class="bg-white rounded-lg shadow-lg p-6 mb-8 text-center">
+                        
+                        <!-- Circular Progress Bar with Text Overlay -->
+                        <div class="relative w-36 h-36 mx-auto mb-6">
+                            ${renderCircularProgressBar(FIXED_PERCENT_FUNDED)}
+                            <!-- Percentage Text Overlay -->
+                            <div class="absolute inset-0 flex flex-col justify-center items-center">
+                                <p class="text-gray-800 font-bold text-3xl">
+                                    ${FIXED_PERCENT_FUNDED}%
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Funded
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                          <h3 class="text-4xl font-bold text-kickstarter-green">
+                            ${formatWholeDollarCurrency(FIXED_TOTAL_COST)}
+                          </h3>
+                          <p class="text-gray-600 font-medium mt-1">
+                            pledged of ${formatCurrencyShort(MAIN_GOAL_1_YEAR)} goal
+                          </p>
+                        </div>
+                        
+                        <!-- NEW METRIC: Time Funded -->
+                        <div class="mt-6 border-t pt-5">
+                          <h4 class="text-2xl font-bold text-gray-900">
+                            ${timeFundedText}
+                          </h4>
+                          <p class="text-gray-600 font-medium">of ACA subsidies funded by this amount</p>
+                        </div>
+                        
+                        <div class="mt-5">
+                          <h4 class="text-4xl font-bold text-gray-900">
+                            ${FIXED_SHUTDOWN_DAYS}
+                          </h4>
+                          <p class="text-gray-600 font-medium">days of inaction (backers)</p>
+                          <p class="text-xs text-gray-400 mt-1">(Calculated from ${SHUTDOWN_START_DATE.toLocaleDateString()} to ${NOW.toLocaleDateString()})</p>
+                        </div>
+                        
+                        <div class="mt-6 text-xs text-gray-500">
+                          All or nothing. This project will be funded if the shutdown cost reaches $30B.
+                        </div>
+                      </div>
+                      
+                    </div>
+
+                    <!-- Right Column (Pledge Box & Rewards) -->
+                    <div class="lg:col-span-1">
+                      
+                      <!-- "Rewards" - Alternative Goals -->
+                      <div class="mt-0">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">
+                          Alternative Funding Goals
+                        </h3>
+                        <div class="space-y-4">
+                          ${milestoneCards}
+                        </div>
+                      </div>
+                      
+                      <footer class="mt-8">
+                        <p class="text-center text-xs text-gray-500">
+                          Snapshot data fixed at ${FIXED_SHUTDOWN_DAYS} days of shutdown ($${formatCurrencyShort(FIXED_TOTAL_COST)}).
+                          Shutdown cost: ~$400M/day (CBO est.).
+                          ACA costs: 1-year estimates based on 10-year CRFB projections.
+                        </p>
+                      </footer>
+                      
+                    </div>
+                    
+                  </div>
+                </div>
+            `;
+            
+            // Inject the generated HTML into the root element
+            document.getElementById('root').innerHTML = html;
+        };
+
+        // Initialize the app on window load
+        window.onload = renderApp;
+    </script>
+</body>
+</html>
