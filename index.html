@@ -426,4 +426,70 @@
                             dramatically for millions of Americans.
                           </p>
                           <p>
-                            The "pledged" amount is the <strong>fixed, cumulative cost of the 2025 government shutdown</strong> after <strong>${FIXED_SH
+                            The "pledged" amount is the <strong>fixed, cumulative cost of the 2025 government shutdown</strong> after <strong>${FIXED_SHUTDOWN_DAYS} days</strong>,
+                            based on CBO estimates of approximately $400 million per day.
+                          </p>
+                          <p>
+                            Instead of "backers," we're counting the <strong>duration of the shutdown</strong>.
+                          </p>
+                        </div>
+                      </div>
+
+                      <!-- Call to Action Section -->
+                      <div class="mt-12 bg-white rounded-lg shadow-xl p-6 border-t-4 border-kickstarter-green">
+                          <h2 class="text-2xl font-bold text-gray-900 mb-3 flex items-center">
+                              <ion-icon name="megaphone-outline" class="mr-3 text-kickstarter-green text-3xl"></ion-icon>
+                              Call to Action: Fund Healthcare, Not Inaction
+                          </h2>
+                          <p class="text-gray-700 text-lg mb-6">
+                              The cost of the shutdown could have already funded over half a year of enhanced ACA subsidies. 
+                              Contact your representative and urge them to resolve the budget impasse and prioritize funding healthcare stability.
+                          </p>
+                          <a 
+                              href="https://www.congress.gov/members/find-your-member" 
+                              target="_blank" 
+                              class="inline-block w-full md:w-auto px-8 py-3 text-lg font-bold text-white bg-kickstarter-green rounded-lg shadow-md hover:bg-green-700 transition duration-300 transform hover:scale-[1.02] text-center"
+                          >
+                              Find Your Representative & Speak Out
+                              <ion-icon name="arrow-forward-outline" class="ml-2"></ion-icon>
+                          </a>
+                      </div>
+                      
+                    </div>
+
+                    <!-- Right Column (Pledge Box & Rewards) -->
+                    <div class="lg:col-span-1">
+                      
+                      <!-- "Rewards" - Alternative Goals -->
+                      <div class="mt-0">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">
+                          Alternative Funding Goals
+                        </h3>
+                        <div class="space-y-4">
+                          ${milestoneCards}
+                        </div>
+                      </div>
+                      
+                      <footer class="mt-8">
+                        <p class="text-center text-xs text-gray-500">
+                          Snapshot data fixed at ${FIXED_SHUTDOWN_DAYS} days of shutdown ($${formatCurrencyShort(FIXED_TOTAL_COST)}).
+                          Shutdown cost: ~$400M/day (CBO est.).
+                          ACA costs: 1-year estimates based on 10-year CRFB projections.
+                        </p>
+                      </footer>
+                      
+                    </div>
+                    
+                  </div>
+                </div>
+            `;
+            
+            // Inject the generated HTML into the root element
+            document.getElementById('root').innerHTML = html;
+        };
+
+        // Initialize the app on window load
+        window.onload = renderApp;
+    </script>
+</body>
+</html>
